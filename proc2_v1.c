@@ -7,43 +7,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*	ME DELETE !!!!
-*	PARA TESTAR: ./proc2_v1 -i -f file.txt -lr -x 'hero' -a -b -f
+/*	
+*	PARA TESTAR: ./proc2_v1 ls pwd whoami hostname 
 */
 int main(int argc, char *argv[])
 {
 	int opt;
-	
-	// put ':' in the starting of the
-	// string so that program can
-	//distinguish between '?' and ':'
-	while((opt = getopt(argc, argv, ":f:ilrx")) != -1)
-	{
-		switch(opt)
-		{
-			case 'i':
-			case 'l':
-			case 'r':
-				printf("option: %c\n", opt);
-				break;
-			case 'f':
-				printf("filename: %s\n", optarg);
-				break;
-			case ':':
-				printf("option -%c needs a value\n",optopt);
-				break;
-			case '?':
-				printf("unknown option: -%c\n", optopt);
-				break;
-		}
-	}
+	pid_t status;
+	char command;
 	
 	// optind is for the extra arguments
 	// which are not parsed
 	for(; optind < argc; optind++){	
-		printf("extra arguments: %s\n", argv[optind]);
-	}
-	
+		status = fork();
+		if(status == 0){ // será executado pelo filho
+			printf("Command: %s\n", argv[optind]);
+			char binaryPath[100] = "/bin/";
+			strcat(binaryPath,argv[optind]);
+
+			execl(binaryPath , argv[optind] , NULL);
+		} else{ // será executado pelo pai
+
+			int exitCodeFromChild;
+			if ( waitpid(status, &exitCodeFromChild, 0) == -1 ) {
+				perror("waitpid failed");
+				return EXIT_FAILURE;
+			}
+
+			if ( WIFEXITED(exitCodeFromChild) ) {
+				const int es = WEXITSTATUS(exitCodeFromChild);
+				if (es == 0)
+					printf("Executado com  sucesso.\n\n");
+				else
+					printf("Código de retorno = %d\n\n", es);
+			}
+		}
+	}	
+ 	
 	return 0;
 }
-
